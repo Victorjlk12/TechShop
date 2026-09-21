@@ -13,6 +13,10 @@ th { background-color: #007bff; color: white; }
 .btn-update { background-color: #28a745; color: white; }
 .btn-delete { background-color: #dc3545; color: white; margin-left:5px; }
 .seletor-acesso { padding: 10px; font-weight: bold; background-color: #e2e3e5; border-radius: 5px; }
+#popup { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:9999; }
+#popup-box { padding:25px; border-radius:12px; min-width:300px; text-align:center; color:white; }
+.erro { background:#e74c3c; }
+.sucesso { background:#27ae60; }
 </style>
 </head>
 <body>
@@ -30,26 +34,52 @@ th { background-color: #007bff; color: white; }
 <h2>Controle de Estoque Técnico</h2>
 <table id="tabelaEstoque"><thead><tr><th>Produto</th><th>Estoque Atual</th><th>Total Vendido</th><th>Ação (Restrito Admin)</th></tr></thead><tbody></tbody></table>
 </div>
+
+<!-- POPUPS -->
+<div id="popup" onclick="fecharPopup()">
+  <div id="popup-box">
+    <h3 id="popup-titulo"></h3>
+    <p id="popup-msg"></p>
+    <button onclick="fecharPopup()" style="margin-top:15px; padding:8px 20px; background:white; color:black; border:none; border-radius:8px; cursor:pointer;">Fechar</button>
+  </div>
+</div>
+
 <script>
+function mostrarPopup(tipo, titulo, msg) {
+  document.getElementById('popup-box').className = tipo;
+  document.getElementById('popup-titulo').innerText = titulo;
+  document.getElementById('popup-msg').innerText = msg;
+  document.getElementById('popup').style.display = 'flex';
+}
+function fecharPopup() { document.getElementById('popup').style.display = 'none'; }
+
 function obterNivelAcesso(){ return document.getElementById('nivelAcesso').value; }
+
 async function carregarVendas(){
-  const resposta = await fetch('/api/relatorio-vendas');
-  const dados = await resposta.json();
-  const tbody = document.querySelector('#tabelaVendas tbody');
-  tbody.innerHTML = '';
-  dados.forEach(venda => {
-    tbody.innerHTML += `<tr><td>${venda.id_pedido}</td><td>${venda.nome_cliente}</td><td>R$ ${parseFloat(venda.total_pedido).toFixed(2)}</td><td>${venda.status_pedido}</td></tr>`;
-  });
+  try {
+    const resposta = await fetch('/api/relatorio/vendas');
+    const dados = await resposta.json();
+    const tbody = document.querySelector('#tabelaVendas tbody');
+    tbody.innerHTML = '';
+    dados.forEach(venda => {
+      tbody.innerHTML += `<tr><td>${venda.id_pedido || venda._id}</td><td>${venda.nome_cliente || venda.cliente_nome}</td><td>R$ ${parseFloat(venda.total_pedido).toFixed(2)}</td><td>${venda.status_pedido || venda.status}</td></tr>`;
+    });
+  } catch(e){ console.log(e); }
 }
+
 async function carregarEstoque(){
-  const resposta = await fetch('/api/estoque');
-  const dados = await resposta.json();
-  const tbody = document.querySelector('#tabelaEstoque tbody');
-  tbody.innerHTML = '';
-  dados.forEach(item => {
-    tbody.innerHTML += `<tr><td>${item.nome_produto}</td><td><input type="number" id="est-${item.id_produto}" value="${item.estoque_atual}" style="width:60px;"></td><td>${item.total_unidades_vendidas} und</td><td><button class="btn btn-update" onclick="alterarEstoque(${item.id_produto})">Salvar</button></td></tr>`;
-  });
+  try {
+    const resposta = await fetch('/api/relatorio/estoque');
+    const dados = await resposta.json();
+    const tbody = document.querySelector('#tabelaEstoque tbody');
+    tbody.innerHTML = '';
+    dados.forEach(item => {
+      const id = item.id_produto || item._id;
+      tbody.innerHTML += `<tr><td>${item.nome_produto || item.nome}</td><td><input type="number" id="est-${id}" value="${item.estoque_atual || item.estoque}" style="width:60px;"></td><td>${item.total_unidades_vendidas || 0} und</td><td><button class="btn btn-update" onclick="alterarEstoque('${id}')">Salvar</button></td></tr>`;
+    });
+  } catch(e){ console.log(e); }
 }
+
 async function alterarEstoque(idProduto){
   const novoEstoque = document.getElementById(`est-${idProduto}`).value;
   const nivel = obterNivelAcesso();
@@ -59,9 +89,14 @@ async function alterarEstoque(idProduto){
     body: JSON.stringify({ novoEstoque: parseInt(novoEstoque) })
   });
   const resultado = await resposta.json();
-  if (resposta.ok) { alert(resultado.mensagem); carregarEstoque(); }
-  else { alert(`Erro ${resposta.status}: ${resultado.erro}`); carregarEstoque(); }
+  if (resposta.ok) {
+    mostrarPopup('sucesso', '✅ Gerente Atualizou!', resultado.mensagem || `Estoque alterado para ${novoEstoque}`);
+    carregarEstoque();
+  } else {
+    mostrarPopup('erro', '⛔ Clientes Não Podem Atualizar', resultado.erro || 'Acesso negado. Apenas Administradores podem alterar estoque.');
+  }
 }
+
 carregarVendas(); carregarEstoque();
 </script>
 </body>
