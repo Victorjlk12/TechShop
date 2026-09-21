@@ -2,98 +2,126 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel TechShop - Full Stack</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TechShop - Painel Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f6f9; }
-.card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-th { background-color: #007bff; color: white; }
-.btn { padding: 6px 12px; cursor: pointer; border: none; border-radius: 4px; }
-.btn-update { background-color: #28a745; color: white; }
-.btn-delete { background-color: #dc3545; color: white; margin-left:5px; }
-.seletor-acesso { padding: 10px; font-weight: bold; background-color: #e2e3e5; border-radius: 5px; }
-#popup { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:9999; }
-#popup-box { padding:25px; border-radius:12px; min-width:300px; text-align:center; color:white; }
-.erro { background:#e74c3c; }
-.sucesso { background:#27ae60; }
+*{font-family:'Inter',sans-serif; box-sizing:border-box; margin:0; padding:0;}
+body{background:#0f1115; color:#e5e7eb; padding:30px;}
+h1{font-size:28px; margin-bottom:20px; display:flex; align-items:center; gap:10px;}
+.badge{background:#1f2937; padding:10px 16px; border-radius:12px; display:inline-flex; align-items:center; gap:10px; margin-bottom:25px;}
+.badge select{background:#111827; color:white; border:1px solid #374151; padding:8px 12px; border-radius:8px; font-weight:600;}
+.card{background:#181a20; border:1px solid #262a33; border-radius:16px; padding:22px; margin-bottom:24px; box-shadow:0 10px 30px rgba(0,0,0,0.3);}
+.card h2{font-size:18px; margin-bottom:15px; color:#fff;}
+table{width:100%; border-collapse:collapse;}
+th{color:#9ca3af; font-size:12px; text-transform:uppercase; letter-spacing:1px; padding:12px 10px; border-bottom:1px solid #262a33; text-align:left;}
+td{padding:14px 10px; border-bottom:1px solid #1f242f; font-size:14px;}
+tr:hover td{background:#1e212a;}
+.status{padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600;}
+.status.Concluído{background:#052e1f; color:#34d399; border:1px solid #065f46;}
+.status.Pendente{background:#2a1f05; color:#fbbf24; border:1px solid #92400e;}
+input[type=number]{background:#0f1115; border:1px solid #374151; color:white; padding:8px 10px; border-radius:8px; width:80px; text-align:center;}
+.btn{padding:8px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:600; transition:.2s;}
+.btn-primary{background:#3b82f6; color:white;} .btn-primary:hover{background:#2563eb; transform:translateY(-1px);}
+.btn-ghost{background:#262a33; color:#d1d5db;} .btn-ghost:hover{background:#2f3441;}
+
+/* POPUP */
+#overlay{position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; z-index:9999; animation:fadeIn .2s ease;}
+#popup-box{width:90%; max-width:380px; padding:28px; border-radius:20px; text-align:center; transform:scale(.9); animation:popIn .3s ease forwards; box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+#popup-box.erro{background:linear-gradient(135deg,#7f1d1d,#dc2626); border:1px solid #ef4444;}
+#popup-box.sucesso{background:linear-gradient(135deg,#064e3b,#059669); border:1px solid #10b981;}
+#popup-box .icon{font-size:48px; margin-bottom:12px; display:block;}
+#popup-box h3{font-size:20px; margin-bottom:8px;}
+#popup-box p{font-size:14px; opacity:.9; line-height:1.5;}
+#popup-close{margin-top:18px; background:white; color:black; padding:10px 22px; border-radius:10px; border:none; font-weight:700; cursor:pointer;}
+@keyframes fadeIn{from{opacity:0} to{opacity:1}}
+@keyframes popIn{to{transform:scale(1)}}
 </style>
 </head>
 <body>
-<h1>Gerenciamento de Dados TechShop</h1>
-<div class="card seletor-acesso">
-<label for="nivelAcesso">Simular Nível de Acesso Atual: </label>
-<select id="nivelAcesso"><option value="Client">Cliente (Apenas Visualização)</option><option value="Admin">Administrador (Acesso Total)</option></select>
-</div>
-<div class="card">
-<h2>Relatório de Vendas</h2>
-<button class="btn btn-update" onclick="carregarVendas()">Atualizar Relatório</button>
-<table id="tabelaVendas"><thead><tr><th>ID Pedido</th><th>Cliente</th><th>Total Pedido</th><th>Status</th></tr></thead><tbody></tbody></table>
-</div>
-<div class="card">
-<h2>Controle de Estoque Técnico</h2>
-<table id="tabelaEstoque"><thead><tr><th>Produto</th><th>Estoque Atual</th><th>Total Vendido</th><th>Ação (Restrito Admin)</th></tr></thead><tbody></tbody></table>
+
+<h1>⚡ TechShop OS</h1>
+
+<div class="badge">
+  <span>👤 Acesso:</span>
+  <select id="nivelAcesso">
+    <option value="Client">Cliente - Só visualiza</option>
+    <option value="Admin">Administrador - Acesso total</option>
+  </select>
 </div>
 
-<!-- POPUPS -->
-<div id="popup" onclick="fecharPopup()">
-  <div id="popup-box">
+<div class="card">
+  <h2>📊 Relatório de Vendas</h2>
+  <table id="tabelaVendas"><thead><tr><th>ID</th><th>Cliente</th><th>Total</th><th>Status</th></tr></thead><tbody><tr><td colspan="4">Carregando...</td></tr></tbody></table>
+</div>
+
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+    <h2>📦 Estoque Técnico</h2>
+    <button class="btn btn-ghost" onclick="carregarEstoque()">↻ Atualizar</button>
+  </div>
+  <table id="tabelaEstoque"><thead><tr><th>Produto</th><th>Estoque</th><th>Vendido</th><th>Ação</th></tr></thead><tbody><tr><td colspan="4">Carregando...</td></tr></tbody></table>
+</div>
+
+<div id="overlay" onclick="fecharPopup()">
+  <div id="popup-box" onclick="event.stopPropagation()">
+    <span class="icon" id="popup-icon"></span>
     <h3 id="popup-titulo"></h3>
     <p id="popup-msg"></p>
-    <button onclick="fecharPopup()" style="margin-top:15px; padding:8px 20px; background:white; color:black; border:none; border-radius:8px; cursor:pointer;">Fechar</button>
+    <button id="popup-close" onclick="fecharPopup()">Entendi</button>
   </div>
 </div>
 
 <script>
-function mostrarPopup(tipo, titulo, msg) {
-  document.getElementById('popup-box').className = tipo;
+function mostrarPopup(tipo, titulo, msg){
+  const box = document.getElementById('popup-box');
+  box.className = tipo;
+  document.getElementById('popup-icon').innerText = tipo==='erro' ? '⛔' : '✅';
   document.getElementById('popup-titulo').innerText = titulo;
   document.getElementById('popup-msg').innerText = msg;
-  document.getElementById('popup').style.display = 'flex';
+  document.getElementById('overlay').style.display='flex';
 }
-function fecharPopup() { document.getElementById('popup').style.display = 'none'; }
-
-function obterNivelAcesso(){ return document.getElementById('nivelAcesso').value; }
+function fecharPopup(){ document.getElementById('overlay').style.display='none'; }
+const nivel = () => document.getElementById('nivelAcesso').value;
 
 async function carregarVendas(){
-  try {
-    const resposta = await fetch('/api/relatorio/vendas');
-    const dados = await resposta.json();
-    const tbody = document.querySelector('#tabelaVendas tbody');
-    tbody.innerHTML = '';
-    dados.forEach(venda => {
-      tbody.innerHTML += `<tr><td>${venda.id_pedido || venda._id}</td><td>${venda.nome_cliente || venda.cliente_nome}</td><td>R$ ${parseFloat(venda.total_pedido).toFixed(2)}</td><td>${venda.status_pedido || venda.status}</td></tr>`;
-    });
-  } catch(e){ console.log(e); }
+  try{
+    const r = await fetch('/api/relatorio-vendas');
+    const dados = await r.json();
+    document.querySelector('#tabelaVendas tbody').innerHTML = dados.map(v=>`
+      <tr><td>#${v.id_pedido}</td><td><b>${v.nome_cliente}</b></td><td>R$ ${Number(v.total_pedido).toFixed(2)}</td><td><span class="status ${v.status_pedido}">${v.status_pedido}</span></td></tr>
+    `).join('');
+  }catch(e){ document.querySelector('#tabelaVendas tbody').innerHTML='<tr><td colspan=4>Erro ao carregar vendas</td></tr>'; }
 }
 
 async function carregarEstoque(){
-  try {
-    const resposta = await fetch('/api/relatorio/estoque');
-    const dados = await resposta.json();
-    const tbody = document.querySelector('#tabelaEstoque tbody');
-    tbody.innerHTML = '';
-    dados.forEach(item => {
-      const id = item.id_produto || item._id;
-      tbody.innerHTML += `<tr><td>${item.nome_produto || item.nome}</td><td><input type="number" id="est-${id}" value="${item.estoque_atual || item.estoque}" style="width:60px;"></td><td>${item.total_unidades_vendidas || 0} und</td><td><button class="btn btn-update" onclick="alterarEstoque('${id}')">Salvar</button></td></tr>`;
-    });
-  } catch(e){ console.log(e); }
+  try{
+    const r = await fetch('/api/estoque');
+    const dados = await r.json();
+    document.querySelector('#tabelaEstoque tbody').innerHTML = dados.map(i=>`
+      <tr>
+        <td><b>${i.nome_produto}</b></td>
+        <td><input id="est-${i.id_produto}" type="number" value="${i.estoque_atual}"></td>
+        <td>${i.total_unidades_vendidas} und</td>
+        <td><button class="btn btn-primary" onclick="alterarEstoque('${i.id_produto}')">Salvar</button></td>
+      </tr>
+    `).join('');
+  }catch(e){ document.querySelector('#tabelaEstoque tbody').innerHTML='<tr><td colspan=4>Erro ao carregar estoque</td></tr>'; }
 }
 
-async function alterarEstoque(idProduto){
-  const novoEstoque = document.getElementById(`est-${idProduto}`).value;
-  const nivel = obterNivelAcesso();
-  const resposta = await fetch(`/api/produtos/${idProduto}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'user-level': nivel },
-    body: JSON.stringify({ novoEstoque: parseInt(novoEstoque) })
+async function alterarEstoque(id){
+  const novo = document.getElementById(`est-${id}`).value;
+  const res = await fetch(`/api/produtos/${id}`,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','user-level':nivel()},
+    body:JSON.stringify({novoEstoque:parseInt(novo)})
   });
-  const resultado = await resposta.json();
-  if (resposta.ok) {
-    mostrarPopup('sucesso', '✅ Gerente Atualizou!', resultado.mensagem || `Estoque alterado para ${novoEstoque}`);
+  const data = await res.json();
+  if(res.ok){
+    mostrarPopup('sucesso','Gerente Atualizou!','Estoque alterado para '+novo+' unidades. Alteração registrada no sistema.');
     carregarEstoque();
   } else {
-    mostrarPopup('erro', '⛔ Clientes Não Podem Atualizar', resultado.erro || 'Acesso negado. Apenas Administradores podem alterar estoque.');
+    mostrarPopup('erro','Clientes Não Podem Atualizar', data.erro);
   }
 }
 
