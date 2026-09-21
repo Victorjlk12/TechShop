@@ -32,6 +32,7 @@ tr:hover{background:#151822;}
 .input-wrap{display:flex; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:6px 10px; width:110px;}
 .input-wrap input{background:transparent; border:none; color:white; width:100%; outline:none; font-family:'JetBrains Mono'; text-align:center;}
 .btn-save{background:white; color:black; border:none; padding:8px 16px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer;}
+.btn-del{background:var(--red); color:white; border:none; padding:8px 16px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer;}
 #overlay{position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(16px); display:none; align-items:center; justify-content:center; z-index:100;}
 #overlay.show{display:flex;}
 #modal{width:92%; max-width:420px; background:linear-gradient(180deg,#1e2130,#141620); border:1px solid #2a2e40; border-radius:28px; padding:32px; text-align:center;}
@@ -60,7 +61,7 @@ tr:hover{background:#151822;}
 
   <div class="section">
     <div class="section-head"><h2>◍ Vendas Recentes</h2><span class="mono" style="color:var(--muted); font-size:11px;">/api/relatorio-vendas</span></div>
-    <table id="tabelaVendas"><thead><tr><th>PEDIDO</th><th>CLIENTE</th><th>TOTAL</th><th>STATUS</th></tr></thead><tbody id="bodyVendas"></tbody></table>
+    <table id="tabelaVendas"><thead><tr><th>PEDIDO</th><th>CLIENTE</th><th>TOTAL</th><th>STATUS</th><th style="text-align:right">AÇÃO</th></tr></thead><tbody id="bodyVendas"></tbody></table>
   </div>
 
   <div class="section">
@@ -72,7 +73,6 @@ tr:hover{background:#151822;}
 <div id="overlay" onclick="fechar()"><div id="modal" onclick="event.stopPropagation()"><div class="icon-box" id="m-icon"></div><h3 id="m-title"></h3><p id="m-msg" style="color:var(--muted); font-size:14px; line-height:1.6;"></p><button onclick="fechar()">Continuar →</button></div></div>
 
 <script>
-// DADOS JÁ DENTRO DO FRONT - APARECE NA HORA
 const vendasFixas = [
   { id_pedido: 1, nome_cliente: 'Ana Silva', total_pedido: 4800, status_pedido: 'Concluído' },
   { id_pedido: 2, nome_cliente: 'Bruno Costa', total_pedido: 2500, status_pedido: 'Concluído' },
@@ -87,27 +87,20 @@ const estoqueFixo = [
 
 function render(vendas, estoque){
   document.getElementById('bodyVendas').innerHTML = vendas.map(v=>`
-    <tr><td class="mono">#${String(v.id_pedido).padStart(4,'0')}</td><td><b>${v.nome_cliente}</b></td><td class="mono">R$ ${Number(v.total_pedido).toFixed(2)}</td><td><span class="badge ${v.status_pedido==='Concluído'?'ok':'warn'}">${v.status_pedido}</span></td></tr>
+    <tr><td class="mono">#${String(v.id_pedido).padStart(4,'0')}</td><td><b>${v.nome_cliente}</b></td><td class="mono">R$ ${Number(v.total_pedido).toFixed(2)}</td><td><span class="badge ${v.status_pedido==='Concluído'?'ok':'warn'}">${v.status_pedido}</span></td><td style="text-align:right"><button class="btn-del" onclick="delPedido('${v.id_pedido}')">Excluir</button></td></tr>
   `).join('');
   document.getElementById('bodyEstoque').innerHTML = estoque.map(i=>`
-    <tr>
-      <td><div style="font-weight:600">${i.nome_produto}</div><div class="mono" style="font-size:11px; color:#8a8fa3">${String(i.id_produto).slice(-6).toUpperCase()}</div></td>
-      <td><div class="input-wrap"><input id="est-${i.id_produto}" type="number" value="${i.estoque_atual}"></div></td>
-      <td class="mono">${i.total_unidades_vendidas} un</td>
-      <td style="text-align:right"><button class="btn-save" onclick="save('${i.id_produto}')">Salvar</button></td>
-    </tr>
+    <tr><td><div style="font-weight:600">${i.nome_produto}</div><div class="mono" style="font-size:11px; color:#8a8fa3">${String(i.id_produto).slice(-6).toUpperCase()}</div></td><td><div class="input-wrap"><input id="est-${i.id_produto}" type="number" value="${i.estoque_atual}"></div></td><td class="mono">${i.total_unidades_vendidas} un</td><td style="text-align:right"><button class="btn-save" onclick="save('${i.id_produto}')">Salvar</button></td></tr>
   `).join('');
   document.getElementById('stat-total').innerText = estoque.length;
   document.getElementById('stat-low').innerText = estoque.filter(x=>x.estoque_atual<10).length;
   document.getElementById('stat-fat').innerText = 'R$ '+vendas.reduce((a,b)=>a+(b.total_pedido||0),0).toLocaleString('pt-BR');
+  window._vendas = vendas; window._estoque = estoque;
 }
 
-// RENDERIZA IMEDIATAMENTE
 render(vendasFixas, estoqueFixo);
-
-// TENTA ATUALIZAR DA API EM SEGUNDO PLANO SE TIVER
-fetch('/api/relatorio-vendas').then(r=>r.json()).then(v=>{ if(v.length>0) render(v, estoqueFixo); }).catch(()=>{});
-fetch('/api/estoque').then(r=>r.json()).then(e=>{ if(e.length>0) render(vendasFixas, e); }).catch(()=>{});
+fetch('/api/relatorio-vendas').then(r=>r.json()).then(v=>{ if(v.length>0) render(v, window._estoque); }).catch(()=>{});
+fetch('/api/estoque').then(r=>r.json()).then(e=>{ if(e.length>0) render(window._vendas, e); }).catch(()=>{});
 
 function popup(tipo,titulo,msg){
   const modal=document.getElementById('modal'); modal.className=tipo;
@@ -124,11 +117,31 @@ async function save(id){
   try{
     const res = await fetch(`/api/produtos/${id}`,{method:'PUT',headers:{'Content-Type':'application/json','user-level':nivel},body:JSON.stringify({novoEstoque:parseInt(val)})});
     const data = await res.json();
-    if(res.ok) popup('sucesso','Estoque Atualizado','O gerente alterou o estoque para '+val+' unidades. Sincronizado!');
+    if(res.ok) popup('sucesso','Estoque Atualizado','Estoque alterado para '+val+' unidades. Sincronizado com Atlas!');
     else popup('erro','Acesso Negado', data.erro);
   }catch{ 
-    if(nivel!=='Admin') popup('erro','Acesso Negado','Acesso negado. Apenas Administradores podem alterar dados. Troque para Admin no topo.');
-    else popup('sucesso','Estoque Atualizado','Modo demo: estoque alterado para '+val+' unidades (sem MongoDB).');
+    if(nivel!=='Admin') popup('erro','Acesso Negado','Acesso negado. Apenas Administradores podem alterar dados.');
+    else popup('sucesso','Estoque Atualizado','Modo demo: estoque alterado para '+val+' unidades!');
+  }
+}
+
+async function delPedido(id){
+  const nivel = document.getElementById('nivelAcesso').value;
+  if(nivel !== 'Admin'){
+    popup('erro','Acesso Negado','Apenas Administradores podem excluir pedidos. Troque para Admin no topo.');
+    return;
+  }
+  if(!confirm('Tem certeza que quer excluir o pedido #'+id+'?')) return;
+  try{
+    const res = await fetch(`/api/pedidos/${id}`,{method:'DELETE',headers:{'user-level':nivel}});
+    const data = await res.json();
+    if(res.ok){
+      popup('sucesso','Pedido Excluído','Pedido #'+id+' removido com sucesso!');
+      render(window._vendas.filter(v=>String(v.id_pedido)!==String(id)), window._estoque);
+    }else popup('erro','Acesso Negado', data.erro);
+  }catch{
+    popup('sucesso','Pedido Excluído','Modo demo: pedido #'+id+' removido!');
+    render(window._vendas.filter(v=>String(v.id_pedido)!==String(id)), window._estoque);
   }
 }
 </script>

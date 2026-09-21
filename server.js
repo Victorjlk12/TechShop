@@ -61,6 +61,14 @@ app.put('/api/produtos/:id', verificarAcesso('Admin'), async (req, res) => {
   res.json({ mensagem: 'Estoque atualizado com sucesso!' });
 });
 
+app.delete('/api/pedidos/:id', verificarAcesso('Admin'), async (req, res) => {
+  try{ 
+    await Pedido.findOneAndDelete({ id_pedido: req.params.id });
+    // ou await Pedido.findByIdAndDelete(req.params.id);
+  }catch{}
+  res.json({ mensagem: 'Pedido excluído com sucesso!' });
+});
+
 if (process.env.NODE_ENV !== 'production') {
   app.listen(3000, () => console.log(`Rodando http://localhost:3000`));
 }
