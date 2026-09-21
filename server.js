@@ -2,17 +2,18 @@ import express from 'express';
 import mongoose from 'mongoose';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// SEU LINK DO MONGODB WEB - ATLAS
-const MONGO_URI = "mongodb+srv://vitorgabrielgabriel20199_db_user:0DBYhSSKCMyRoTKs@cluster0.fq9fgj8.mongodb.net/techshop?appName=Cluster0";
+const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
  .then(() => console.log('Conectado no MongoDB Atlas WEB!'))
